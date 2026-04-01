@@ -880,22 +880,22 @@
                     <div class="about-content">
                         <div class="about-section">
                             <h3>👋 个人简介</h3>
-                            <p>我是wlx，一名专注于市场研究、内容创作与AIGC应用的复合型创作者。拥有经济学与传播学交叉背景，擅长通过用户调研挖掘需求，结合AI工具打造优质内容，致力于在数字化营销领域创造价值。</p>
+                            <p>我是wlx（王俪璇），一名专注于市场研究、内容创作与AIGC应用的复合型创作者。拥有传播学背景，擅长通过用户调研挖掘需求，结合AI工具打造优质内容，致力于在数字化营销领域创造价值。</p>
                         </div>
                         
                         <div class="about-section">
                             <h3>🎓 教育背景</h3>
-                            <p>XX大学 经济学 & 传播学 双学位 (2022-2026)<br>主修课程：市场营销、消费者行为、数据分析、数字媒体创作</p>
+                            <p>深圳大学 传播学 (2023-2027)<br>主修课程：市场营销、新媒体用户研究、数据分析、数字媒体创作</p>
                         </div>
                         
                         <div class="about-section">
                             <h3>🎯 职业目标</h3>
-                            <p>希望在未来3-5年内，成为数字营销领域的专家，特别是在AI赋能的内容创作与用户增长方面，打造有影响力的品牌与产品。</p>
+                            <p>希望在未来3-5年内，在数字技术领域成长，特别是在AI赋能的内容创作与用户增长方面，打造有影响力的品牌与产品。</p>
                         </div>
                         
                         <div class="about-section">
                             <h3>🏆 获奖经历</h3>
-                            <p>2024年全国大学生市场调研大赛一等奖<br>2023年数字营销创新大赛二等奖<br>2022年校园新媒体创作大赛金奖</p>
+                            <p>2023年全国大学生广告艺术大赛 国家优秀奖</p>
                         </div>
                         
                         <div class="about-section">
@@ -1229,13 +1229,13 @@
     ];
     
     // AI技能分析
-    const skillAnalysisText = "基于您的技能数据，AI分析显示：您在市场研究和AIGC应用方面表现突出，这与当前数字化营销趋势高度契合。建议继续深化数据分析能力，并探索AIGC在个性化营销中的应用。";
+    const skillAnalysisText = "基于wlx的技能数据，AI分析显示：wlx在市场研究和AIGC应用方面表现突出，这与当前数字化营销趋势高度契合。具有继续深化数据分析能力，以及探索AIGC在个性化营销中的应用的潜力。";
     
     // 项目推荐理由
     const recommendationReasons = {
-        a: "研究项目展示了您扎实的数据分析能力和市场洞察力，这是许多雇主看重的核心能力。",
-        b: "实习项目证明了您的实践经验和团队协作能力，是简历中的亮点。",
-        c: "内容创作项目体现了您的创造力和多媒体表达能力，在内容为王的时代极具价值。"
+        a: "研究项目展示了wlx扎实的数据分析能力和市场洞察力，这是许多雇主看重的核心能力。",
+        b: "实习项目证明了wlx的实践经验和团队协作能力，是简历中的亮点。",
+        c: "内容创作项目体现了wlx的创造力和多媒体表达能力，在内容为王的时代极具价值。"
     };
     
     // 标签页切换
@@ -1399,18 +1399,35 @@
     
     // 项目卡片点击
     cards.forEach((c, i) => {
-        const cat = c.dataset.category;
-        const key = cat + ((i % 3) + 1);
+    const cat = c.dataset.category;
+    
+    // 修复：根据类别和在该类别中的位置计算正确的key
+    let key;
+    if (cat === 'a') {
+        // a类项目：前两个卡片
+        key = i < 2 ? 'a' + (i + 1) : null;
+    } else if (cat === 'b') {
+        // b类项目：第3个卡片
+        key = 'b1';
+    } else if (cat === 'c') {
+        // c类项目：后三个卡片
+        key = 'c' + (i - 2);
+    }
+    
+    if (key && projects[key]) {
         c.onclick = () => {
             const d = projects[key];
             document.getElementById('modalTitle').textContent = d.title;
             document.getElementById('modalImg').src = d.img;
-            document.getElementById('modalImg').alt = d.title;
             document.getElementById('modalDesc').innerHTML = d.desc;
             document.getElementById('modalTags').innerHTML = d.tags.map(t => `<span class="tag">${t}</span>`).join('');
             modal.style.display = 'flex';
-        }
-    });
+        };
+    } else {
+        console.warn(`卡片 ${i} (类别: ${cat}) 没有对应的项目数据`);
+        c.style.cursor = 'not-allowed';
+    }
+});
     
     // 关闭模态框
     closeModalBtn.onclick = closeModal;
