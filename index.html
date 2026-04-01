@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wlx的虚拟打字机 | 个人作品集</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #c82e2e;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            position: relative;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+        body.dark {
+            background-color: #1a1a1a;
+            color: #f0e6d2;
+        }
+        
+        /* 修改1: 删除背景横线波浪线，改为纯色渐变 */
+        .paper-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            z-index: 0;
+            background: linear-gradient(135deg, rgba(255, 248, 232, 0.1) 0%, rgba(200, 46, 46, 0.1) 100%);
+            animation: paperFade 30s ease-in-out infinite alternate;
+        }
+        
+        .flying-papers {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .flying-paper {
+            position: absolute;
+            background-color: rgba(255, 248, 232, 0.15);
+            border: 1px solid rgba(255, 248, 232, 0.3);
+            border-radius: 2px;
+            transform: rotate(var(--rotate, 0deg));
+            animation: fly linear infinite;
+        }
+        .flying-paper:nth-child(1) { width: 60px; height: 80px; top: -10%; left: 10%; --rotate: 15deg; animation-duration: 25s; }
+        .flying-paper:nth-child(2) { width: 40px; height: 60px; top: -10%; left: 30%; --rotate: -10deg; animation-duration: 30s; }
+        .flying-paper:nth-child(3) { width: 70px; height: 90px; top: -10%; left: 50%; --rotate: 25deg; animation-duration: 28s; }
+        .flying-paper:nth-child(4) { width: 50px; height: 70px; top: -10%; left: 70%; --rotate: -15deg; animation-duration: 32s; }
+        .flying-paper:nth-child(5) { width: 35px; height: 50px; top: -10%; left: 90%; --rotate: 8deg; animation-duration: 27s; }
+        @keyframes fly {
+            0% { transform: translateY(0) translateX(0) rotate(var(--rotate, 0deg)); opacity: 0; }
+            5% { opacity: 1; } 95% { opacity: 1; }
+            100% { transform: translateY(110vh) translateX(var(--translate-x, 50px)) rotate(var(--rotate, 0deg)); opacity: 0; }
+        }
+        .flying-paper:nth-child(1) { --translate-x: 80px; }
+        .flying-paper:nth-child(2) { --translate-x: -60px; }
+        .flying-paper:nth-child(3) { --translate-x: 120px; }
+        .flying-paper:nth-child(4) { --translate-x: -90px; }
+        .flying-paper:nth-child(5) { --translate-x: 70px; }
+
+        @keyframes paperFade {
+            0% { opacity: 0.25; } 100% { opacity: 0.85; }
+        }
+        
+        /* 头部样式 */
+        .header {
+            position: relative; 
+            z-index: 1;
+            max-width: 900px; 
+            margin: 40px auto 60px;
+            padding: 0 20px; 
+            text-align: center;
+        }
+        .main-title {
+            font-family: 'SimHei', '黑体', sans-serif;
+            font-size: 48px; 
+            font-weight: normal;
+            color: #fff8e8; 
+            margin-bottom: 16px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .sub-title {
+            font-family: 'SimHei', '黑体', sans-serif;
+            font-size: 18px; 
+            font-weight: normal;
+            color: #f0e6d2; 
+            line-height: 1.5;
+        }
+        
+        /* 主容器 */
+        .container {
+            position: relative; 
+            z-index: 1;
+            max-width: 900px; 
+            margin: 0 auto 50px;
+            padding: 20px;
+        }
+        
+        /* 打字机主体 */
+        .typewriter {
+            position: relative; 
+            width: 100%; 
+            max-width: 700px;
+            margin: 0 auto; 
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+            transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .typewriter.slide-down {
+            transform: translateY(520px);
+        }
+        .typewriter-body {
+            background-color: #333; 
+            border-radius: 10px;
+            padding: 20px; 
+            border: 3px solid #000; 
+            position: relative;
+        }
+        .typewriter-keyboard {
+            display: grid; 
+            grid-template-columns: repeat(13, 1fr);
+            gap: 8px; 
+            margin-top: 20px;
+        }
+        .key {
+            background-color: #fff8e8; 
+            border-radius: 4px;
+            height: 35px; 
+            border: 2px solid #d4c7a8;
+            box-shadow: 2px 2px 0 #000; 
+            color: #333;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold;
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+        .key.pressed {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 2px #fff8e8;
+            background-color: #d4c7a8;
+        }
+        .start-key {
+            grid-column: 3 / 12; 
+            height: 45px;
+            background-color: #fff8e8; 
+            border: 3px solid #d4c7a8;
+            cursor: pointer; 
+            font-size: 14px; 
+            text-align: center;
+            line-height: 39px; 
+            color: #333; 
+            font-weight: bold;
+            position: relative; 
+            animation: shake 2s ease-in-out infinite;
+        }
+        @keyframes shake {
+            0%,100%{transform:translate(0,0)rotate(0deg)}25%{transform:translate(-1px,-1px)rotate(-.5deg)}50%{transform:translate(1px,1px)rotate(.5deg)}75%{transform:translate(-1px,1px)rotate(-.5deg)}
+        }
+        .start-key:hover {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 4px rgba(255,248,232,0.5);
+            animation: none;
+        }
+        .arrow-indicator {
+            text-align: center; 
+            margin-top: 20px;
+            font-size: 30px; 
+            color: #fff8e8;
+            animation: bounceUp 1.5s ease-in-out infinite;
+        }
+        @keyframes bounceUp {
+            0%{transform:translateY(0);opacity:1}50%{transform:translateY(-15px);opacity:.8}100%{transform:translateY(0);opacity:1}
+        }
+        
+        /* 纸张区域 */
+        .paper {
+            background-color: #fff8e8; 
+            border: 2px solid #d4c7a8;
+            padding: 20px; 
+            min-height: 120px; 
+            margin-bottom: 15px;
+            border-radius: 4px; 
+            overflow: hidden;
+            transition: all 0.8s ease-out; 
+            max-height: 120px;
+        }
+        body.dark .paper {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+        .paper.expanded {
+            min-height: 350px; 
+            max-height: 600px; 
+            padding: 30px 20px;
+        }
+        .paper-content {
+            opacity: 0; 
+            transform: translateY(20px);
+            transition: all 0.6s ease-out 0.3s;
+        }
+        .paper.expanded .paper-content {
+            opacity: 1; 
+            transform: translateY(0);
+        }
+        
+        /* 标签页导航 */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #d4c7a8;
+            padding-bottom: 5px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .tab-btn.active {
+            color: #c82e2e;
+            font-weight: bold;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #c82e2e;
+        }
+        body.dark .tab-btn.active {
+            color: #ff6b6b;
+        }
+        body.dark .tab-btn.active::after {
+            background-color: #ff6b6b;
+        }
+        .tab-btn:hover {
+            color: #c82e2e;
+        }
+        
+        /* 修改3: 为标签页内容添加滑动条 */
+        .tab-content {
+            display: none;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 自定义滚动条样式 */
+        .tab-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .tab-content::-webkit-scrollbar-track {
+            background: rgba(200, 46, 46, 0.1);
+            border-radius: 3px;
+        }
+        .tab-content::-webkit-scrollbar-thumb {
+            background: rgba(200, 46, 46, 0.5);
+            border-radius: 3px;
+        }
+        .tab-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(200, 46, 46, 0.7);
+        }
+        body.dark .tab-content::-webkit-scrollbar-track {
+            background: rgba(255, 107, 107, 0.1);
+        }
+        body.dark .tab-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 107, 0.5);
+        }
+        body.dark .tab-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 107, 0.7);
+        }
+        
+        .paper-title {
+            font-size: 28px; 
+            color: #333; 
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        body.dark .paper-title {
+            color: #f0e6d2;
+        }
+        .paper-subtitle {
+            font-size: 16px; 
+            color: #666; 
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        body.dark .paper-subtitle {
+            color: #aaa;
+        }
+        .paper-divider {
+            border-bottom: 2px dashed #d4c7a8;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        /* AI功能区域 */
+        .ai-zone {
+            margin: 25px 0;
+            padding: 15px;
+            background: rgba(200, 46, 46, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #c82e2e;
+        }
+        body.dark .ai-zone {
+            background: rgba(255, 107, 107, 0.1);
+            border-left-color: #ff6b6b;
+        }
+        .ai-title {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #c82e2e;
+        }
+        body.dark .ai-title {
+            color: #ff6b6b;
+        }
+        .ai-title i {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .ai-content {
+            line-height: 1.6;
+            font-size: 15px;
+            min-height: 24px;
+        }
+        .ai-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .ai-btn {
+            padding: 8px 15px;
+            background: #c82e2e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        body.dark .ai-btn {
+            background: #ff6b6b;
+        }
+        .ai-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .ai-btn.secondary {
+            background: #f0e6d2;
+            color: #333;
+        }
+        body.dark .ai-btn.secondary {
+            background: #444;
+            color: #f0e6d2;
+        }
+        
+        /* 技能条 */
+        .skill-group {
+            margin: 20px 0;
+        }
+        .skill-item {
+            margin-bottom: 12px;
+        }
+        .skill-text {
+            font-size: 14px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .skill-bar {
+            width: 100%;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        body.dark .skill-bar {
+            background: #444;
+        }
+        .skill-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #c82e2e, #ff6b6b);
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* 关于我内容 */
+        .about-content {
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        .about-section {
+            margin-bottom: 20px;
+        }
+        .about-section h3 {
+            color: #c82e2e;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        body.dark .about-section h3 {
+            color: #ff6b6b;
+        }
+        
+        /* 按钮 */
+        .buttons {
+            display: flex; 
+            justify-content: center;
+            gap: 40px; 
+            margin-top: 40px;
+        }
+        .circle-btn {
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%;
+            border: 2px solid #333; 
+            background-color: transparent;
+            color: #333; 
+            font-size: 16px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            text-align: center;
+            line-height: 1.3;
+            padding: 5px;
+        }
+        body.dark .circle-btn {
+            border-color: #f0e6d2;
+            color: #f0e6d2;
+        }
+        .circle-btn.active {
+            background-color: #333; 
+            color: #fff8e8;
+        }
+        body.dark .circle-btn.active {
+            background-color: #f0e6d2;
+            color: #333;
+        }
+        .circle-btn:hover {
+            background-color: #f0e6d2; 
+            transform: scale(1.1);
+        }
+        body.dark .circle-btn:hover {
+            background-color: #444;
+        }
+        .back-btn {
+            margin: 30px auto 0; 
+            display: block;
+            background: none; 
+            border: none; 
+            outline: none;
+            color: #333; 
+            font-weight: normal;
+            cursor: pointer; 
+            opacity: 0.8;
+            font-size: 16px;
+        }
+        body.dark .back-btn {
+            color: #f0e6d2;
+        }
+        .back-btn:hover {
+            opacity: 1; 
+            transform: scale(1.03);
+        }
+        
+        /* 联系栏 - 修改4: 删除了电话相关内容 */
+        .contact-bar {
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .contact-item a {
+            color: #c82e2e;
+            text-decoration: none;
+        }
+        body.dark .contact-item a {
+            color: #ff6b6b;
+        }
+        .contact-item a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 访客计数 */
+        .visitor {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        body.dark .visitor {
+            color: #aaa;
+        }
+        
+        /* 滚筒 */
+        .roller {
+            height: 25px; 
+            background-color: #222;
+            border-radius: 12px; 
+            margin: 0 -20px; 
+            position: relative;
+        }
+        .roller::before,.roller::after {
+            content:'';position:absolute;width:40px;height:40px;background-color:#fff8e8;border:3px solid #000;border-radius:50%;top:-8px;
+        }
+        .roller::before{left:-20px}.roller::after{right:-20px}
+        
+        /* 卡片容器 */
+        .card-container {
+            position: absolute;
+            left: 50%;
+            top: 0px;
+            transform: translate(-50%, -150px);
+            width: 700px;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            opacity: 0;
+            transition: all 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .card-container.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+            pointer-events: all;
+            animation: cardsAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes cardsAppear {
+            0% { transform: translate(-50%, -50px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .card {
+            background: #fff8e8; 
+            border: none; 
+            border-radius: 6px;
+            width: 100%; 
+            aspect-ratio: 1/1;
+            transform: scale(0.85);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .card-container.show .card {
+            opacity: 1;
+            transform: scale(0.85) translateY(0);
+        }
+        .card-container.show .card:nth-child(1) { transition-delay: 0.1s; }
+        .card-container.show .card:nth-child(2) { transition-delay: 0.2s; }
+        .card-container.show .card:nth-child(3) { transition-delay: 0.3s; }
+        .card-container.show .card:nth-child(4) { transition-delay: 0.4s; }
+        .card-container.show .card:nth-child(5) { transition-delay: 0.5s; }
+        .card-container.show .card:nth-child(6) { transition-delay: 0.6s; }
+        body.dark .card {
+            background: #2a2a2a;
+        }
+        .card:hover {
+            transform: scale(0.92);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+        }
+        .card-img {
+            width: 100%; 
+            height: 80%; 
+            object-fit: cover;
+            border: none; 
+            margin: 0; 
+            padding: 0;
+        }
+        .card-tab {
+            width: 100%; 
+            height: 20%; 
+            background: #fff8e8;
+            color: #333; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; 
+            font-weight: bold;
+            border: none; 
+            margin: 0; 
+            padding: 0; 
+            font-size: 14px;
+        }
+        body.dark .card-tab {
+            background: #2a2a2a;
+            color: #f0e6d2;
+        }
+        
+        /* 主题切换按钮 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: 2px solid #fff8e8;
+            color: #fff8e8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            z-index: 999;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        body.dark .theme-toggle {
+            border-color: #f0e6d2;
+            color: #f0e6d2;
+        }
+        
+
+            /* 模态框 - 修改后的布局 */
+        .modal {
+            position: fixed;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-box {
+            background: #fff8e8;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            /* 将最大宽度从550px调大20% */
+            max-width: 660px; /* 550px × 1.2 = 660px */
+            /* 将最大高度从80vh调大30%并设置最小高度 */
+            max-height: 104vh; /* 80vh × 1.3 = 104vh */
+            min-height: 300px; /* 添加最小高度确保有内容时显示滚动条 */
+            overflow-y: auto; /* 已设置滑动条 */
+        }
+
+        /* 图片位于最上方，顶格窄条无边距，居中显示 */
+        .modal-img {
+            width: 100%;
+            height: 180px; /* 窄条高度 */
+            object-fit: cover;
+            border-radius: 8px 8px 0 0; /* 只保留顶部圆角 */
+            margin: 0; /* 移除边距 */
+            padding: 0; /* 移除内边距 */
+            display: block; /* 确保正确布局 */
+            object-position: center; /* 图片内容居中 */
+        }
+
+       /* 标题边距 - 左右边距各占20% */
+        .modal-box h2 {
+            margin: 20px 20% 15px; /* 左右20%边距 */
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* 标签区域边距 - 左右边距各占20% */
+        #modalTags {
+            margin: 0 20% 20px; /* 左右20%边距 */
+            padding: 10px 0;
+        }
+
+        /* 项目描述边距 - 左右边距各占20% */
+        .modal-box p {
+            margin: 15px 20% 20px; /* 左右20%边距 */
+            line-height: 1.6;
+            text-align: justify;
+            padding-bottom: 10px;
+        }
+
+        /* 项目描述边距 - 针对 #modalDesc */
+        #modalDesc {
+            margin: 15px 20% 20px; /* 上 20%左 20%右 下 */
+            line-height: 1.6;
+            text-align: justify;
+            padding-bottom: 10px;
+            display: block; /* 确保是块级元素 */
+            width: auto; /* 宽度自动，由边距控制 */
+        }
+
+        /* 退出按钮边距 - 左右边距各占20% */
+        .modal-exit-btn {
+            padding: 8px 20px;
+            background: #999;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin: 20px 20% 25px; /* 左右20%边距 */
+            display: block;
+            width: calc(100% - 40%); /* 60%宽度，左右边距各20% */
+        }
+        .modal-exit-btn:hover {
+            background: #777;
+        }
+
+        body.dark .modal-exit-btn {
+            background: #666;
+            color: #f0e6d2;
+        }
+
+        body.dark .modal-exit-btn:hover {
+            background: #555;
+        }
+
+    /* 标签区域 */
+    .tag {
+        display: inline-block;
+        background: #eee;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+
+    body.dark .tag {
+        background: #444;
+        color: #f0e6d2;
+    }
+            
+        
+        /* 标签区域 */
+        .tag {
+            display: inline-block;
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+        
+        body.dark .tag {
+            background: #444;
+            color: #f0e6d2;
+        }
+        
+        /* 项目描述 */
+        .modal-box p {
+            margin: 15px 25px;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .card-container {
+                width: 90%;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .buttons {
+                gap: 20px;
+            }
+            .circle-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 14px;
+            }
+            .main-title {
+                font-size: 36px;
+            }
+            .paper-title {
+                font-size: 24px;
+            }
+            .tab-content {
+                max-height: 280px;
+            }
+            .modal-img {
+                height: 150px;
+            }
+        }
+        @media (max-width: 480px) {
+            .card-container {
+                grid-template-columns: 1fr;
+            }
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .contact-bar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .tab-nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+            .modal-img {
+                height: 120px;
+            }
+        }
+    </style>
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">🌙 暗黑模式</button>
+
+<div class="paper-bg"></div>
+<div class="flying-papers">
+    <div class="flying-paper"></div>
+    <div class="flying-paper"></div>
+    <div class="flying-paper"></div>
+    <div class="flying-paper"></div>
+    <div class="flying-paper"></div>
+</div>
+
+<div class="header">
+    <h1 class="main-title">wlx的虚拟打字机</h1>
+    <p class="sub-title">点击下方按钮开始探索我的作品集</p>
+</div>
+
+<div class="container">
+    <div class="typewriter" id="typewriter">
+        <div class="roller"></div>
+        <div class="paper" id="paper">
+            <div class="paper-content">
+                <h1 class="paper-title">wlx的作品集</h1>
+                <p class="paper-subtitle">市场研究｜内容创作｜AIGC应用</p>
+                
+                <!-- 标签页导航 -->
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="about">关于我</button>
+                    <button class="tab-btn" data-tab="skills">技能</button>
+                    <button class="tab-btn" data-tab="projects">项目</button>
+                </div>
+                
+                <!-- 关于我标签页 -->
+                <div class="tab-content active" id="aboutTab">
+                    <div class="about-content">
+                        <div class="about-section">
+                            <h3>👋 个人简介</h3>
+                            <p>我是wlx，一名专注于市场研究、内容创作与AIGC应用的复合型创作者。拥有经济学与传播学交叉背景，擅长通过用户调研挖掘需求，结合AI工具打造优质内容，致力于在数字化营销领域创造价值。</p>
+                        </div>
+                        
+                        <div class="about-section">
+                            <h3>🎓 教育背景</h3>
+                            <p>XX大学 经济学 & 传播学 双学位 (2022-2026)<br>主修课程：市场营销、消费者行为、数据分析、数字媒体创作</p>
+                        </div>
+                        
+                        <div class="about-section">
+                            <h3>🎯 职业目标</h3>
+                            <p>希望在未来3-5年内，成为数字营销领域的专家，特别是在AI赋能的内容创作与用户增长方面，打造有影响力的品牌与产品。</p>
+                        </div>
+                        
+                        <div class="about-section">
+                            <h3>🏆 获奖经历</h3>
+                            <p>2024年全国大学生市场调研大赛一等奖<br>2023年数字营销创新大赛二等奖<br>2022年校园新媒体创作大赛金奖</p>
+                        </div>
+                        
+                        <div class="about-section">
+                            <h3>🌟 个人优势</h3>
+                            <p>1. 具备市场研究与内容创作的双重能力，能够从数据中发现洞察，并将其转化为有影响力的内容<br>2. 熟练掌握多种AIGC工具，包括Midjourney、Runway、Stable Diffusion等<br>3. 拥有丰富的项目实践经验，能够独立完成从调研到执行的全流程工作<br>4. 具备良好的团队协作能力和项目管理能力，能够高效推进项目进展</p>
+                        </div>
+                        
+                        <div class="about-section">
+                            <h3>📈 职业发展</h3>
+                            <p>未来希望能够在数字化营销领域深耕，特别是在AI赋能的内容创作方向，探索人机协作的新模式，为企业创造更大的商业价值。同时，也希望能够在行业研究和趋势分析方面做出贡献，推动整个行业的进步。</p>
+                        </div>
+                    </div>
+                    
+                    <!-- AI功能区域 -->
+                    <div class="ai-zone">
+                        <div class="ai-title">
+                            <i class="fas fa-robot"></i> AI助手
+                        </div>
+                        <div class="ai-content" id="aiContent">
+                            <!-- AI生成的内容将显示在这里 -->
+                        </div>
+                        <div class="ai-actions">
+                            <button class="ai-btn" id="generateWisdom">
+                                <i class="fas fa-magic"></i> 生成今日箴言
+                            </button>
+                            <button class="ai-btn secondary" id="aiRecommend">
+                                <i class="fas fa-star"></i> AI推荐项目
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 技能标签页 -->
+                <div class="tab-content" id="skillsTab">
+                    <div class="skill-group">
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>市场研究</span>
+                                <span>90%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="90%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>内容创作</span>
+                                <span>85%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="85%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>视觉设计</span>
+                                <span>80%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="80%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>AIGC应用</span>
+                                <span>88%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="88%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>数据分析</span>
+                                <span>82%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="82%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>项目管理</span>
+                                <span>78%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="78%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>英语能力</span>
+                                <span>85%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="85%"></div>
+                            </div>
+                        </div>
+                        <div class="skill-item">
+                            <div class="skill-text">
+                                <span>团队协作</span>
+                                <span>88%</span>
+                            </div>
+                            <div class="skill-bar">
+                                <div class="skill-progress" style="width:0%" data-width="88%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-zone">
+                        <div class="ai-title">
+                            <i class="fas fa-lightbulb"></i> AI技能分析
+                        </div>
+                        <div class="ai-content" id="skillAnalysis">
+                            <!-- AI技能分析将显示在这里 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 项目标签页 -->
+                <div class="tab-content" id="projectsTab">
+                    <p style="text-align: center; margin: 20px 0; color: #666;">
+                        点击下方按钮查看不同类型项目
+                    </p>
+                    
+                    <div class="paper-divider"></div>
+                    
+                    <div class="buttons">
+                        <button class="circle-btn" data-filter="a">研究项目</button>
+                        <button class="circle-btn" data-filter="b">实习项目</button>
+                        <button class="circle-btn" data-filter="c">内容创作</button>
+                    </div>
+                    
+                    <div class="ai-zone" style="margin-top: 30px;">
+                        <div class="ai-title">
+                            <i class="fas fa-info-circle"></i> 项目说明
+                        </div>
+                        <div class="ai-content">
+                            每个项目都经过精心策划和执行，涵盖了从市场调研、数据分析到内容创作的全过程。点击上方按钮可以按类别筛选项目，点击具体项目卡片可以查看详细信息。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 联系方式 - 修改4: 删除了电话相关内容 -->
+                <div class="contact-bar">
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:carmen-wang@qq.com">carmen-wang@qq.com</a>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-file-pdf"></i>
+                        <!-- 修改5: 设置"下载简历"链接 -->
+                        <a href="wlx_resume.pdf" id="resumeLink" download>下载简历</a>
+                    </div>
+                </div>
+                
+                <!-- 访客计数 -->
+                <div class="visitor">总访问：<span id="visitor">128</span> 人次</div>
+                
+                <button class="back-btn" id="backBtn">
+                    <i class="fas fa-chevron-up"></i> 收起
+                </button>
+            </div>
+        </div>
+        
+        <div class="typewriter-body">
+            <div class="typewriter-keyboard" id="keyboard">
+                <!-- 键盘布局 -->
+                <div class="key">`</div><div class="key">1</div><div class="key">2</div><div class="key">3</div><div class="key">4</div><div class="key">5</div><div class="key">6</div><div class="key">7</div><div class="key">8</div><div class="key">9</div><div class="key">0</div><div class="key">-</div><div class="key">=</div>
+                <div class="key">q</div><div class="key">w</div><div class="key">e</div><div class="key">r</div><div class="key">t</div><div class="key">y</div><div class="key">u</div><div class="key">i</div><div class="key">o</div><div class="key">p</div><div class="key">[</div><div class="key">]</div>
+                <div class="key">a</div><div class="key">s</div><div class="key">d</div><div class="key">f</div><div class="key">g</div><div class="key">h</div><div class="key">j</div><div class="key">k</div><div class="key">l</div><div class="key">;</div><div class="key">'</div>
+                <div class="key">z</div><div class="key">x</div><div class="key">c</div><div class="key">v</div><div class="key">b</div><div class="key">n</div><div class="key">m</div><div class="key">,</div><div class="key">.</div><div class="key">/</div>
+                <button class="key start-key" id="startBtn">开始探索</button>
+            </div>
+        </div>
+        <div class="arrow-indicator">↑</div>
+    </div>
+
+    <!-- 项目卡片容器 -->
+    <div class="card-container" id="cardContainer">
+        <div class="card" data-category="a">
+            <img class="card-img" src="https://www.itcow.cn/wp-content/uploads/2025/11/image-260.png" alt="智能体消费研究项目">
+            <div class="card-tab">智能体消费研究项目</div>
+        </div>
+        <div class="card" data-category="a">
+            <img class="card-img" src="https://ts3.tc.mm.bing.net/th/id/OIP-C.yV6trD0wFGZ9GFAASqfm4AHaEK?rs=1&pid=ImgDetMain&o=7&rm=3" alt="多邻国营销追踪项目">
+            <div class="card-tab">多邻国营销追踪项目</div>
+        </div>
+        <div class="card" data-category="b">
+            <img class="card-img" src="https://pp.myapp.com/ma_pic2/0/shot_12190750_1_1723082422/0" alt="KOL运营实习项目">
+            <div class="card-tab">KOL运营实习项目</div>
+        </div>
+        <div class="card" data-category="c">
+            <img class="card-img" src="https://ts1.tc.mm.bing.net/th/id/R-C.f3ec0f9e4e6695e2c5bd80810b61064c?rik=qFcl1bWUHu%2bZtQ&riu=http%3a%2f%2fwww.cuepa.cn%2fstatic%2fpicture%2f20240423162223_297520_small.jpg&ehk=cNeGnINzmQTqyECGFQnW6CMjGAfzSNz6vpgZ%2bFrV4W4%3d&risl=&pid=ImgRaw&r=0" alt="采访报道项目">
+            <div class="card-tab">采访报道项目</div>
+        </div>
+        <div class="card" data-category="c">
+            <img class="card-img" src="一万时浏览器插件.png" alt="vibe coding开发项目">
+            <div class="card-tab">vibe coding开发项目</div>
+        </div>
+        <div class="card" data-category="c">
+            <img class="card-img" src="https://ai-bot.cn/wp-content/uploads/2024/08/jimengAI-website2.png" alt="AIGC视频制作项目">
+            <div class="card-tab">AIGC视频制作项目</div>
+        </div>
+    </div>
+</div>
+
+<!-- 项目详情模态框 - 修改后的结构 -->
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <!-- 图片位于最上方，顶格窄条无边距 -->
+        <img id="modalImg" class="modal-img" alt="项目图片">
+        
+        <!-- 标题位于图片下方 -->
+        <h2 id="modalTitle"></h2>
+        
+        <!-- 标签区域 -->
+        <div id="modalTags"></div>
+        
+        <!-- 项目描述 -->
+        <p id="modalDesc" style="margin:15px 10% 10px;line-height:1.6"></p>
+        
+        <!-- 灰色无边框退出按钮 -->
+        <button id="closeModal" class="modal-exit-btn">退出</button>
+    </div>
+</div>
+
+<!-- 打字音效 -->
+<audio id="key1" src="https://assets.mixkit.co/sfx/preview/mixkit-keyboard-type-tap-2546.mp3"></audio>
+<audio id="key2" src="https://assets.mixkit.co/sfx/preview/mixkit-mechanical-keyboard-1355.mp3"></audio>
+<audio id="keyPress" src="https://assets.mixkit.co/sfx/preview/mixkit-keyboard-tap-2545.mp3"></audio>
+
+<script>
+    // DOM元素
+    const startBtn = document.getElementById('startBtn');
+    const backBtn = document.getElementById('backBtn');
+    const paper = document.getElementById('paper');
+    const typewriter = document.getElementById('typewriter');
+    const cardContainer = document.getElementById('cardContainer');
+    const filterBtns = document.querySelectorAll('.circle-btn');
+    const cards = document.querySelectorAll('.card');
+    const themeToggle = document.getElementById('themeToggle');
+    const modal = document.getElementById('modal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const generateWisdomBtn = document.getElementById('generateWisdom');
+    const aiRecommendBtn = document.getElementById('aiRecommend');
+    const aiContent = document.getElementById('aiContent');
+    const skillAnalysis = document.getElementById('skillAnalysis');
+    const resumeLink = document.getElementById('resumeLink');
+    const visitorCount = document.getElementById('visitor');
+    
+    // 键盘按键元素
+    const keyboardKeys = document.querySelectorAll('.key:not(.start-key)');
+    
+    // 音效
+    const key1 = document.getElementById('key1');
+    const key2 = document.getElementById('key2');
+    const keyPress = document.getElementById('keyPress');
+    
+    // 项目数据
+    const projects = {
+        a1: {
+            title: "智能体消费研究项目", 
+            img: "https://www.itcow.cn/wp-content/uploads/2025/11/image-260.png", 
+            desc: "在人工智能技术不断发展的背景下，智能体AI Agent逐渐进入了大众视野，智能体使用成为现实。观察到这种趋势，我参与策划了智能体消费研究项目。<br>这个项目主要探究使用者对AI代理的真实感受，以及影响持续使用意愿的相关因素，包括对于智能体能力特点、用户心理特征、使用过程中的任务解脱感等感知。<br>项目采用数据抓取分析与问卷调查方法，我主要负责数据收集整理与整篇研究报告的撰写工作。<br>由于项目仍在进行中，研究结论尚在探索中……", 
+            tags: ["用户研究", "数据分析", "市场调研", "报告输出"]
+        },
+        a2: {
+            title: "多邻国营销追踪项目", 
+            img: "https://ts3.tc.mm.bing.net/th/id/OIP-C.yV6trD0wFGZ9GFAASqfm4AHaEK?rs=1&pid=ImgDetMain&o=7&rm=3", 
+            desc: "作为课程作业，这个追踪项目历时三个月，包括在小红书、抖音平台跟踪分析300多条多邻国官方发文内容为样本。<br>数据可视化呈现出多邻国“抽象营销”的具体方式，涵盖品牌联名推广、情感化修辞发文、结合互联网热点玩梗、以吉祥物“多儿”增强观众代入感等。", 
+            tags: ["营销分析", "渠道优化", "数据监测", "竞品分析"]
+        },
+        b1: {
+            title: "KOL运营实习项目", 
+            img: "https://pp.myapp.com/ma_pic2/0/shot_12190750_1_1723082422/0", 
+            desc: "负责AIGC内容输出领域的KOL筛选、策划与拉新转化，为社群工具“知识星球”挖掘合适的内容创作者。<br>筛选并联系优质创作者，沟通合作事宜，邀请入驻平台付费社群，将内容创作者转化为平台用户，实现用户拉新转化率8%。          ", 
+            tags: ["账号运营", "内容策划", "粉丝增长", "社交媒体"]
+        },
+        c1: {
+            title: "采访报道项目", 
+            img: "https://ts1.tc.mm.bing.net/th/id/R-C.f3ec0f9e4e6695e2c5bd80810b61064c?rik=qFcl1bWUHu%2bZtQ&riu=http%3a%2f%2fwww.cuepa.cn%2fstatic%2fpicture%2f20240423162223_297520_small.jpg&ehk=cNeGnINzmQTqyECGFQnW6CMjGAfzSNz6vpgZ%2bFrV4W4%3d&risl=&pid=ImgRaw&r=0", 
+            desc: "在《深圳大学报》参与采访报道工作，聚焦人物类专题内容。策划采访选题，安排采访流程与问题设计，完成 3 篇专题报道，其中报道获评年度最佳人物报道。。", 
+            tags: ["文案写作", "专访报道", "内容创作", "采写"]
+        },
+        c2: {
+            title: "vibe coding 浏览器插件开发项目", 
+            img: "一万时浏览器插件例图.png", 
+            desc: "以“一万小时定律”为创意核心，我独立策划并通过AI辅助完成「一万时」浏览器插件全流程开发。<br>除了产品逻辑由我自主完成之外，UI设计通过自然语言描述与AI生成来完成：<br>这个vibe coding插件产品支持自定义3个学习领域、监控指定网页停留时长，以进度条可视化用户在某一个领域的一万小时成长进度；<br>采用浅蓝极简风格，打造仿iOS推送条的轻量化界面，实现下拉切换、领域排序等交互功能。<br>全程以自然语言驱动AI生成代码并迭代调试，完成从产品构思到功能落地的完整闭环。", 
+            tags: ["产品设计", "Vibe Coding", "UI/UX", "插件开发"]
+        },
+        c3: {
+            title: "AIGC视频制作项目", 
+            img: "https://ai-bot.cn/wp-content/uploads/2024/08/jimengAI-website2.png", 
+            desc: "与AI协同完成视频作品《青城山火锅奇缘》创作。<br>当我发起创意构思，AI完成脚本撰写。<br>后续根据脚本，我设计了分镜内容描述，而AI负责画面生成、配音及配乐制作，最终完成了一个讲述许仙与白娘子穿越至现代成都重逢的趣味故事。", 
+            tags: ["AIGC", "视频制作", "AI工具", "创意内容"]
+        }
+    };
+    
+    // 访客计数
+    let visitCount = localStorage.getItem('visitCount') || 128;
+    visitorCount.textContent = visitCount;
+    
+    // 暗黑模式切换
+    themeToggle.onclick = () => {
+        document.body.classList.toggle('dark');
+        themeToggle.textContent = document.body.classList.contains('dark') ? '☀️ 浅色模式' : '🌙 暗黑模式';
+        localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+    };
+    
+    // 初始化暗黑模式
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+        themeToggle.textContent = '☀️ 浅色模式';
+    }
+    
+    // 模拟AI生成的箴言库
+    const wisdomQuotes = [
+        "创造力不是等待灵感，而是每天坚持工作。— 柴可夫斯基",
+        "市场研究的关键在于倾听用户未说出口的需求。",
+        "在AI时代，人类独特的价值在于提出正确的问题。",
+        "优秀的内容创作是艺术与科学的完美结合。",
+        "数据不会说谎，但需要正确的解读才能揭示真相。",
+        "真正的创新往往发生在不同领域的交叉点上。",
+        "在信息过载的时代，简洁即是力量。",
+        "每一次用户访谈都是一次发现人性之旅。",
+        "设计不只是外观，更是解决问题的方式。",
+        "AI不是替代人类，而是放大人类的创造力。"
+    ];
+    
+    // AI技能分析
+    const skillAnalysisText = "基于您的技能数据，AI分析显示：您在市场研究和AIGC应用方面表现突出，这与当前数字化营销趋势高度契合。建议继续深化数据分析能力，并探索AIGC在个性化营销中的应用。";
+    
+    // 项目推荐理由
+    const recommendationReasons = {
+        a: "研究项目展示了您扎实的数据分析能力和市场洞察力，这是许多雇主看重的核心能力。",
+        b: "实习项目证明了您的实践经验和团队协作能力，是简历中的亮点。",
+        c: "内容创作项目体现了您的创造力和多媒体表达能力，在内容为王的时代极具价值。"
+    };
+    
+    // 标签页切换
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            
+            // 更新活动标签
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 显示对应内容
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === tabId + 'Tab') {
+                    content.classList.add('active');
+                }
+            });
+            
+            // 如果是技能标签页，显示AI分析
+            if (tabId === 'skills') {
+                setTimeout(() => {
+                    typeText(skillAnalysis, skillAnalysisText, 30);
+                }, 300);
+            }
+        });
+    });
+    
+    // 开始探索按钮
+    startBtn.addEventListener('click', () => {
+        paper.classList.add('expanded');
+        typewriter.classList.add('slide-down');
+        cardContainer.classList.add('show');
+        
+        // 更新访客计数
+        visitCount++;
+        visitorCount.textContent = visitCount;
+        localStorage.setItem('visitCount', visitCount);
+        
+        // 打字效果
+        const introText = "你好！我是wlx（王俪璇），一名专注于内容研究、创作与AIGC应用的复合型创作者。拥有传播学背景，我擅长通过用户调研挖掘深层需求，结合AI工具打造优质内容，致力于在数字化营销领域创造独特价值。";
+        typeText(document.querySelector('.about-content p'), introText, 40);
+        
+        // 技能条动画
+        setTimeout(() => {
+            document.querySelectorAll('.skill-progress').forEach(p => {
+                p.style.width = p.dataset.width;
+            });
+        }, 1500);
+        
+        // 显示AI欢迎语
+        setTimeout(() => {
+            aiContent.textContent = "您好！我是您的AI助手，我可以为您生成个性化箴言或推荐适合您查看的项目。";
+        }, 1000);
+    });
+    
+    // 收起按钮
+    backBtn.addEventListener('click', () => {
+        paper.classList.remove('expanded');
+        typewriter.classList.remove('slide-down');
+        cardContainer.classList.remove('show');
+        filterBtns.forEach(btn => btn.classList.remove('active'));
+        cards.forEach(card => card.style.display = 'flex');
+    });
+    
+    // 修改6: 项目筛选 - 添加滑动到卡片区域功能
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            const active = Array.from(filterBtns).filter(b => b.classList.contains('active')).map(b => b.dataset.filter);
+            cards.forEach(c => {
+                c.style.display = active.length == 0 || active.includes(c.dataset.category) ? 'flex' : 'none';
+            });
+            
+            // 滑动到卡片区域
+            if (cardContainer.classList.contains('show')) {
+                cardContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // 生成AI箴言
+    generateWisdomBtn.addEventListener('click', () => {
+        const randomQuote = wisdomQuotes[Math.floor(Math.random() * wisdomQuotes.length)];
+        
+        // 模拟AI思考过程
+        aiContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI思考中...';
+        
+        setTimeout(() => {
+            typeText(aiContent, `今日箴言：${randomQuote}`, 30);
+        }, 800);
+    });
+    
+    // AI推荐项目
+    aiRecommendBtn.addEventListener('click', () => {
+        // 模拟AI分析过程
+        aiContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI正在分析项目数据...';
+        
+        setTimeout(() => {
+            // 随机推荐一个项目类型
+            const categories = ['a', 'b', 'c'];
+            const recommendedCat = categories[Math.floor(Math.random() * categories.length)];
+            const reason = recommendationReasons[recommendedCat];
+            
+            // 高亮对应的项目按钮
+            filterBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === recommendedCat) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 显示推荐的项目
+            cards.forEach(c => {
+                c.style.display = c.dataset.category === recommendedCat ? 'flex' : 'none';
+            });
+            
+            // 显示推荐理由
+            typeText(aiContent, `🤖 AI推荐：基于wlx的背景和目标，我推荐您重点浏览「${getCategoryName(recommendedCat)}」类项目。${reason}`, 30);
+            setTimeout(() => {
+            // 滑动到卡片区域
+            if (cardContainer.classList.contains('show')) {
+                cardContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start'
+                });
+            }
+            }, 4500);
+        }, 1200);
+    });
+    
+    // 获取类别名称
+    function getCategoryName(cat) {
+        const names = { a: '研究项目', b: '实习项目', c: '内容创作' };
+        return names[cat] || cat;
+    }
+    
+    // 打字机效果函数
+    function typeText(element, text, speed = 50) {
+        element.textContent = '';
+        let i = 0;
+        
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                
+                // 随机播放打字音效
+                const k = Math.random() > 0.7 ? key2 : key1;
+                k.currentTime = 0;
+                k.play().catch(() => {});
+                
+                setTimeout(type, Math.random() * speed + 20);
+            }
+        }
+        type();
+    }
+    
+    // 项目卡片点击
+    cards.forEach((c, i) => {
+        const cat = c.dataset.category;
+        const key = cat + ((i % 3) + 1);
+        c.onclick = () => {
+            const d = projects[key];
+            document.getElementById('modalTitle').textContent = d.title;
+            document.getElementById('modalImg').src = d.img;
+            document.getElementById('modalImg').alt = d.title;
+            document.getElementById('modalDesc').innerHTML = d.desc;
+            document.getElementById('modalTags').innerHTML = d.tags.map(t => `<span class="tag">${t}</span>`).join('');
+            modal.style.display = 'flex';
+        }
+    });
+    
+    // 关闭模态框
+    closeModalBtn.onclick = closeModal;
+    function closeModal() { 
+        modal.style.display = 'none'; 
+    }
+    window.onclick = e => { 
+        if (e.target === modal) closeModal(); 
+    }
+    
+    // 键盘按键交互
+    document.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        
+        // 播放按键音效
+        keyPress.currentTime = 0;
+        keyPress.play().catch(() => {});
+        
+        // 高亮对应的虚拟键
+        keyboardKeys.forEach(virtualKey => {
+            if (virtualKey.textContent === key || 
+                (key === ' ' && virtualKey.classList.contains('start-key')) ||
+                (key === 'enter' && virtualKey.classList.contains('start-key'))) {
+                virtualKey.classList.add('pressed');
+                
+                setTimeout(() => {
+                    virtualKey.classList.remove('pressed');
+                }, 150);
+            }
+        });
+        
+        // 快捷键
+        if (e.ctrlKey || e.metaKey) {
+            switch(key) {
+                case 'd': // Ctrl+D 切换暗黑模式
+                    e.preventDefault();
+                    themeToggle.click();
+                    break;
+                case '1': // Ctrl+1 切换到关于我
+                    e.preventDefault();
+                    document.querySelector('[data-tab="about"]').click();
+                    break;
+                case '2': // Ctrl+2 切换到技能
+                    e.preventDefault();
+                    document.querySelector('[data-tab="skills"]').click();
+                    break;
+                case '3': // Ctrl+3 切换到项目
+                    e.preventDefault();
+                    document.querySelector('[data-tab="projects"]').click();
+                    break;
+            }
+        }
+        
+        // 空格键或回车键触发开始
+        if ((key === ' ' || key === 'enter') && !paper.classList.contains('expanded')) {
+            e.preventDefault();
+            startBtn.click();
+        }
+        
+        // ESC键收起
+        if (key === 'escape' && paper.classList.contains('expanded')) {
+            backBtn.click();
+        }
+    });
+    
+    // 页面加载时显示欢迎信息
+    window.addEventListener('load', () => {
+        // 更新访问次数
+        let visits = parseInt(localStorage.getItem('pageVisits') || '0');
+        visits++;
+        localStorage.setItem('pageVisits', visits.toString());
+        visitorCount.textContent = 128 + visits;
+        
+        // 显示欢迎提示
+        setTimeout(() => {
+            if (!paper.classList.contains('expanded')) {
+                aiContent.textContent = "点击「开始探索」按钮，了解我的技能与项目。";
+            }
+        }, 2000);
+    });
+</script>
+</body>
+</html>
